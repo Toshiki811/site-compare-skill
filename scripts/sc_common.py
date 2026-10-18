@@ -16,7 +16,8 @@
   review/<行>.review.json         採否表（親は採否と対応だけを書く）・review/versions.json（照合に出した版。機械だけ）
   out/                            納品物（拠点比較.xlsx・拠点比較フロー.drawio）と点検の記録
 
-asis の場所: 環境変数 ASIS_FLOW_SKILL → このスキルの 1 つ上のフォルダ → となりの asis-flow-skill（シンボリックリンクを解いて探す）。
+asis の場所: 環境変数 ASIS_FLOW_SKILL → となりの asis-flow-skill（2 つのリポジトリを同じフォルダに並べて複製する）→ このスキルの 1 つ上のフォルダ（シンボリックリンクを解いて探す）。
+使う asis の部品の版（asis の common.API）が ASIS_API より古ければ、止まる。
 モジュール名は sc_ で始める（asis の common・validate などと重ねない）。
 """
 import hashlib
@@ -28,6 +29,8 @@ import sys
 
 SKILL_DIR = pathlib.Path(__file__).resolve().parent.parent
 ASSETS = SKILL_DIR / "assets"
+ASIS_URL = "https://github.com/Toshiki811/asis-flow-skill"
+ASIS_API = 1                                                         # 使う asis の部品の版（asis の common.API がこれ以上）
 
 
 def find_asis():
@@ -35,12 +38,13 @@ def find_asis():
     cands = []
     if os.environ.get("ASIS_FLOW_SKILL"):
         cands.append(pathlib.Path(os.environ["ASIS_FLOW_SKILL"]).expanduser())
-    cands += [SKILL_DIR.parent, SKILL_DIR.parent / "asis-flow-skill"]
+    cands += [SKILL_DIR.parent / "asis-flow-skill", SKILL_DIR.parent]
     for c in cands:
         c = c.resolve()
         if (c / "scripts" / "common.py").exists() and (c / "SKILL.md").exists() and "name: asis-flow-skill" in (c / "SKILL.md").read_text(encoding="utf-8")[:300]:
             return c
-    sys.exit("asis-flow-skill が見つからない（環境変数 ASIS_FLOW_SKILL に、asis-flow-skill のフォルダを書く）")
+    sys.exit(f"asis-flow-skill が見つからない。このスキルのとなりに複製する（cd {SKILL_DIR.parent} && git clone {ASIS_URL}）か、"
+             "環境変数 ASIS_FLOW_SKILL に、asis-flow-skill のフォルダを書く")
 
 
 ASIS = find_asis()
@@ -49,6 +53,9 @@ if str(ASIS_SCRIPTS) not in sys.path:
     sys.path.insert(1, str(ASIS_SCRIPTS))
 
 import common as A                                                   # noqa: E402  asis の共通の部品
+
+if getattr(A, "API", 0) < ASIS_API:
+    sys.exit(f"asis-flow-skill が古い（{ASIS}。部品の版 {getattr(A, 'API', 0)}、要るのは {ASIS_API} 以上）。asis-flow-skill のフォルダで git pull する")
 
 Report, load, save, try_load, norm, same_text = A.Report, A.load, A.save, A.try_load, A.norm, A.same_text
 ends_with_verb, ends_as_question, CJK, site = A.ends_with_verb, A.ends_as_question, A.CJK, A.site

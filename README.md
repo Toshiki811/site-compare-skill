@@ -1,6 +1,6 @@
 # site-compare-skill（拠点間比較）
 
-拠点ごと（インド・ベトナム・シンガポールなどの海外拠点、東京支店・大阪支店などの国内の拠点）の業務マニュアルから、拠点をまたいで業務とタスクを突き合わせ、どこが同じでどこが違うかを、Excel と draw.io に根拠つきで出す Claude Code スキル。[asis-flow-skill](../README.md) を拡張する別のスキルで、拠点ごとの as-is の業務フローは asis-flow-skill で作る。
+拠点ごと（インド・ベトナム・シンガポールなどの海外拠点、東京支店・大阪支店などの国内の拠点）の業務マニュアルから、拠点をまたいで業務とタスクを突き合わせ、どこが同じでどこが違うかを、Excel と draw.io に根拠つきで出す Claude Code スキル。[asis-flow-skill](https://github.com/Toshiki811/asis-flow-skill) を拡張する別のスキル（別のリポジトリ）で、拠点ごとの as-is の業務フローは asis-flow-skill で作る。
 
 進め方は、拠点の一覧 → 全社共通の資料を 1 回だけ読む → 共通の資料の拠点ごとの書き分けを決める → 拠点ごとの as-is（asis-flow-skill で原典照合まで）→ 拠点の写し → 用語の対応 → 比べる行（業務種別の対応）→ タスクの対応 → 計算 → 対応の照合 → 書き出しと点検 → 納品の門、の順。手順は [SKILL.md](SKILL.md)、決まりは [references/compare-rules.md](references/compare-rules.md) にある。
 
@@ -48,11 +48,31 @@
 
 ## セットアップ
 
-asis-flow-skill と同じものが要る（`pip3 install pymupdf python-pptx openpyxl pillow oletools`・Office 文書に LibreOffice か Microsoft Office・PNG の書き出しに draw.io デスクトップ。Python 3.9 以上）。asis-flow-skill の [セットアップ](../README.md#セットアップ) を見る。
+このスキルは [asis-flow-skill](https://github.com/Toshiki811/asis-flow-skill) の部品と検証器を使う。2 つのリポジトリを、同じフォルダに並べて複製する:
 
-Claude Code のスキルとしては、このリポジトリを開けば、`.claude/skills/` から asis-flow-skill と 2 つとも読まれる（クラウドのセッションも。`/site-compare-skill` が `/` の候補に出る）。セッションの途中で `.claude/skills/` ができたときは `/reload-skills`。ほかのプロジェクトからも使うときは、2 つとも自分の機械の `~/.claude/skills` にリンクを張る（このスキルは、リンクを解いた 1 つ上のフォルダの asis-flow-skill を使う。Windows の注意も）。asis-flow-skill の [スキルとして入れる](../README.md#スキルとして入れる) を見る。
+```bash
+git clone https://github.com/Toshiki811/asis-flow-skill
+git clone https://github.com/Toshiki811/site-compare-skill
+```
 
-asis-flow-skill を別の場所に置くときは、環境変数 `ASIS_FLOW_SKILL` にその場所を書く（探す順: `ASIS_FLOW_SKILL` → 1 つ上のフォルダ → となりの `asis-flow-skill`）。
+- asis を探す順: 環境変数 `ASIS_FLOW_SKILL` → となりの `asis-flow-skill` → 1 つ上のフォルダ。別の場所に置くときは、`ASIS_FLOW_SKILL` にその場所を書く。
+- asis の版は固定しない。asis が古い（`scripts/common.py` の部品の版 `API` が、`scripts/sc_common.py` の `ASIS_API` より小さい）と、どのスクリプトも止まって `git pull` を案内する。asis の部品の名前・引数を変えたら、asis の `API` と、ここの `ASIS_API` を上げる。
+- 要る道具は asis-flow-skill と同じ（`pip3 install pymupdf python-pptx openpyxl pillow oletools`・Office 文書に LibreOffice か Microsoft Office・PNG の書き出しに draw.io デスクトップ。Python 3.9 以上）。asis-flow-skill の README の「セットアップ」を見る。
+
+### スキルとして入れる
+
+- このリポジトリを開いた Claude Code は、`.claude/skills/` から site-compare-skill を読む（`/site-compare-skill` が `/` の候補に出る）。`.claude/skills/site-compare-skill/` の中身は、直下の `SKILL.md`・`scripts` などへのリンク。
+- asis-flow-skill のスキルは、asis-flow-skill のリポジトリの `.claude/skills/` から読む。
+- クラウドのセッションでは、2 つのリポジトリを入れたプロジェクトで始める（プロジェクトのセッションは、どのリポジトリの `.claude/skills/` も読む）。2 つが並んで複製されないときは、環境の変数に `ASIS_FLOW_SKILL`（asis-flow-skill の場所）を書く。
+- セッションの途中で `.claude/skills/` ができたときは、`/reload-skills` を打つ。
+- ほかのプロジェクトからも使うときは、自分の機械の `~/.claude/skills` にリンクを張る（その機械のセッションだけに効く）:
+
+  ```bash
+  ln -s <asis-flow-skill のフォルダ> ~/.claude/skills/asis-flow-skill
+  ln -s <このリポジトリ> ~/.claude/skills/site-compare-skill
+  ```
+
+- Windows で複製するときは、シンボリックリンクを有効にしてから複製する（開発者モードと `git config --global core.symlinks true`）。無効だと、リンクがただの文字のファイルになり、スキルが出ない。
 
 ## 動作確認
 
@@ -77,6 +97,7 @@ python3 evals/fixture_tools.py build /tmp/sc_work   # 架空の 3 拠点の比�
 | パス | 内容 |
 | --- | --- |
 | `SKILL.md` | AI への指示書。手順と、読むファイルの案内 |
+| `.claude/skills/site-compare-skill/` | Claude Code がスキルを探す場所。中身は直下へのリンク |
 | `references/compare-rules.md` | 正典。拠点ごとの as-is・用語・比べる行・タスク・機械が決める所・照合・納品物・確認事項の決まり。レビューの指摘を足して育てる |
 | `references/schemas.md` | 比較のデータの形（項目表はスキーマから生成） |
 | `references/site-guide.md` | 拠点ごとの as-is の回し方（共通の資料・書き分け・asis の指示文に足す段落・拠点の門） |

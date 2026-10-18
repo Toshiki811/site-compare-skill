@@ -218,6 +218,30 @@ def expected(base):
 def unit():
     import sc_common as C
     import sc_compute as K
+    with tempfile.TemporaryDirectory() as tmp:                       # asis は別のリポジトリ（となりに複製する）。版を固定しないので、古い asis では止まる
+        tmp = pathlib.Path(tmp)
+        old = tmp / "old_asis"
+        (old / "scripts").mkdir(parents=True)
+        (old / "SKILL.md").write_text("---\nname: asis-flow-skill\n---\n", encoding="utf-8")
+        (old / "scripts" / "common.py").write_text("", encoding="utf-8")
+        env = {k: v for k, v in os.environ.items() if k != "ASIS_FLOW_SKILL"}
+        rc_old, out_old = run("sc_status.py", "-h", env=dict(env, ASIS_FLOW_SKILL=str(old)))
+        lone = tmp / "lone" / "site-compare-skill"
+        shutil.copytree(S, lone / "scripts", ignore=shutil.ignore_patterns("__pycache__"))
+        r = subprocess.run([sys.executable, str(lone / "scripts" / "sc_status.py"), "-h"], capture_output=True, text=True, env=env)
+    say(rc_old != 0 and f"部品の版 0、要るのは {C.ASIS_API} 以上" in out_old and "git pull" in out_old
+        and r.returncode != 0 and f"git clone {C.ASIS_URL}" in r.stdout + r.stderr,
+        "部品: asis が古い（部品の版が無い）と止まって git pull を、見つからないと、となりへの複製を案内する", f"{tail(out_old)} / {tail(r.stdout + r.stderr)}")
+    sk = SKILL / ".claude" / "skills"
+    own = sk / "site-compare-skill"
+    links = [x for x in own.iterdir() if x.is_symlink()] if own.is_dir() and not own.is_symlink() else []
+    named = {x for x in re.findall(r"`(?:python3 )?([A-Za-z_]+)/", (SKILL / "SKILL.md").read_text(encoding="utf-8")) if (SKILL / x).is_dir()}
+    m = re.search(r"^name:\s*(\S+)", (own / "SKILL.md").read_text(encoding="utf-8")[:300], re.M) if (own / "SKILL.md").exists() else None
+    say(sorted(x.name for x in sk.iterdir()) == ["site-compare-skill"] and (own / "SKILL.md").resolve() == (SKILL / "SKILL.md").resolve()
+        and m is not None and m.group(1) == "site-compare-skill" and bool(links) and bool(named)
+        and all(x.exists() and not SKILL.resolve().is_relative_to(x.resolve()) for x in links) and all((own / x).exists() for x in named),
+        "部品: スキルの置き場所（.claude/skills/site-compare-skill は本物のフォルダ。中のリンクは本物の SKILL.md・フォルダに解け、直下を指さない）",
+        f"{[x.name for x in links]} {sorted(named)}")
     cfg = K.config()
     say([K.level_of(x, cfg) for x in (0, 4, 5, 10, 11)] == ["小", "小", "中", "中", "大"], "部品: 大中小の境（点 4 まで小・10 まで中）")
     say([K.spread_level(x, cfg) for x in (0, 2, 3, 5, 6)] == ["小", "小", "中", "中", "大"], "部品: 差の大きさの境（3 から中・6 から大）")

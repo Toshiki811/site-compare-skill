@@ -31,7 +31,7 @@ description: 拠点ごと（インド・ベトナム・シンガポールなど�
 | `assets/sc_complexity.json` | 複雑性の重み・大中小の境・差の大きさの境（既定は目安） | 利用者と境を決めるとき |
 | `assets/拠点比較_テンプレート.xlsx`・`assets/sc_styles.json` | 納品物の様式。中身は機械が流し込む | 直接は編集しない（様式を替えるときは `sc_book.py --template`） |
 
-asis-flow-skill が要る（このスキルは asis の部品と検証器を使う）。探す順: 環境変数 `ASIS_FLOW_SKILL` → このスキルの 1 つ上のフォルダ → となりの `asis-flow-skill`。以下の `{ASIS}` は asis-flow-skill のフォルダ（`sc_status.py` が出すコマンドには、絶対パスで入っている）。
+asis-flow-skill が要る（このスキルは asis の部品と検証器を使う。別のリポジトリで、このスキルのとなりに複製する）。探す順: 環境変数 `ASIS_FLOW_SKILL` → となりの `asis-flow-skill` → このスキルの 1 つ上のフォルダ。見つからない・古い（部品の版が足りない）ときは、スクリプトが止まって、複製・`git pull` を案内する（利用者に伝える）。以下の `{ASIS}` は asis-flow-skill のフォルダ（`sc_status.py` が出すコマンドには、絶対パスで入っている）。
 
 スクリプト（`scripts/`。どれも `-h` で使い方が出る。`-w` は比較の作業フォルダ `<CMP>`）:
 
